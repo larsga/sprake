@@ -85,6 +85,7 @@ class SVGDrawer:
             fill="none" stroke="%s" stroke-width="%s"%s/>
         ''' % (ex, ey, r, r, sx, sy, color.to_html_rgb(), stroke, id))
 
+    # pos: normally aligned with left edge and baseline of text (before rotate)
     def draw_text(self, pos, text, degree = 0, color = style.BLACK):
         degree = degree * -1
         (x, y) = pos

@@ -26,22 +26,25 @@ class DrawingContext:
     def get_circle_point(self, deg, r):
         return get_circle_point(self.center, self.center, deg, r)
 
+def get_drawer(outfile, format, font_size):
+    if format == 'SVG':
+        from sprake.draw_svg import SVGDrawer
+        drawer = SVGDrawer(outfile, font_size)
+    elif format == 'PNG':
+        from sprake.draw_png import PNGDrawer
+        drawer = PNGDrawer(outfile, font_size)
+    elif format == 'PDF':
+        from sprake.draw_pdf import PDFDrawer
+        drawer = PDFDrawer(outfile, font_size)
+    else:
+        assert False
+    return drawer
+
 def render_tree(outfile, tree, dot_legend = None, text_legend = None,
                 format = 'SVG'):
     leaves = tree.get_leaves()
 
-    if format == 'SVG':
-        from sprake.draw_svg import SVGDrawer
-        drawer = SVGDrawer(outfile, FONT_SIZE)
-    elif format == 'PNG':
-        from sprake.draw_png import PNGDrawer
-        drawer = PNGDrawer(outfile, FONT_SIZE)
-    elif format == 'PDF':
-        from sprake.draw_pdf import PDFDrawer
-        drawer = PDFDrawer(outfile, FONT_SIZE)
-    else:
-        assert False
-
+    drawer = get_drawer(outfile, format, FONT_SIZE)
     (text_height, text_width) = drawer.get_text_size('A')
 
     for node in tree.get_leaves():
@@ -178,3 +181,59 @@ def draw_text_legend(ctx, text_legend):
         y = int(y + gap + FONT_SIZE)
 
     # FIXME: could draw a box around it?
+
+def render_straight(outfile, tree, dot_legend = None, text_legend = None,
+                    format = 'SVG'):
+    leaves = tree.get_leaves()
+
+    drawer = get_drawer(outfile, format, FONT_SIZE)
+    (text_height, text_width) = drawer.get_text_size('A')
+
+    for node in tree.get_leaves():
+        text_width = max(text_width, drawer.get_text_size(node.get_label())[1])
+
+    gap = text_height * TEXT_SPACING_FACTOR
+    margin = 10
+    tree_width = 1000
+
+    tree_height = (text_height + gap) * len(leaves)
+    height = margin + tree_height + margin
+    width = margin + tree_width + gap + text_width + margin
+
+    drawer.create(height, width)
+
+    # draw the leaves
+    x = margin + tree_width + gap
+    for (ix, leaf) in enumerate(leaves):
+        y = margin + gap * ix + text_height * (ix + 1)
+        drawer.draw_text((x, y), leaf.get_label(), 0, leaf.textcolor)
+
+    # draw the tree
+    right_edge = margin + tree_width
+    vstep = text_height + gap
+    hstep = float(tree_width) / (tree.get_height() + 1)
+    y = int(round(margin + 0.5 * tree_height))
+    draw_straight_node(drawer, tree, margin, y, 0, vstep, hstep, right_edge)
+
+    drawer.save()
+
+def draw_straight_node(drawer, node, margin, y, depth, vstep, hstep, right_edge):
+    x1 = margin + depth * hstep
+    x2 = margin + (depth+1) * hstep
+    drawer.line((x1, y), (x2, y), stroke = node.linestroke,
+                color = node.linecolor)
+
+    # this is the top of the vertical area the children fill
+    cy = y - int(round(vstep * len(node.get_leaves()) / 2))
+    for child in node.get_children():
+        ydelta = int(round(vstep * len(child.get_leaves()) / 2))
+        cy += ydelta
+        drawer.line((x2, y), (x2, cy), stroke = child.linestroke,
+                color = child.linecolor)
+        draw_straight_node(drawer, child, margin, cy, depth+1, vstep, hstep, right_edge)
+
+        cy += ydelta
+
+    if not node.get_children():
+        drawer.line((x2, y), (right_edge, y), stroke = node.linestroke,
+                    color = node.linecolor)
