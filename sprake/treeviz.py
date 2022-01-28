@@ -1,5 +1,6 @@
 
 import sys, math
+from decimal import Decimal
 from sprake import newick, style
 
 SCALE_FACTOR        = 0.35
@@ -182,6 +183,8 @@ def draw_text_legend(ctx, text_legend):
 
     # FIXME: could draw a box around it?
 
+# ===== STRAIGHT RENDERING MODE
+
 def render_straight(outfile, tree, dot_legend = None, text_legend = None,
                     format = 'SVG'):
     leaves = tree.get_leaves()
@@ -193,44 +196,74 @@ def render_straight(outfile, tree, dot_legend = None, text_legend = None,
         text_width = max(text_width, drawer.get_text_size(node.get_label())[1])
 
     gap = text_height * TEXT_SPACING_FACTOR
-    margin = 10
+    margin = 20
     tree_width = 1000
+    scale_height = text_height + gap * 4
 
     tree_height = (text_height + gap) * len(leaves)
-    height = margin + tree_height + margin
+    height = margin + scale_height + tree_height + margin
     width = margin + tree_width + gap + text_width + margin
 
     drawer.create(height, width)
 
+    (biggest, increment) = calibrate_scale(tree.get_distance_height())
+
     # draw the leaves
     x = margin + tree_width + gap
     for (ix, leaf) in enumerate(leaves):
-        y = margin + gap * ix + text_height * (ix + 1)
+        y = margin + scale_height + gap * ix + text_height * (ix + 1)
         drawer.draw_text((x, y), leaf.get_label(), 0, leaf.textcolor)
 
     # draw the tree
     right_edge = margin + tree_width
     vstep = text_height + gap
-    hstep = float(tree_width) / (tree.get_height() + 1)
-    y = int(round(margin + 0.5 * tree_height))
-    draw_straight_node(drawer, tree, margin, y, 0, vstep, hstep, right_edge)
+    hstep = float(tree_width) / biggest # use biggest to match scale line
+    y = int(round(margin + scale_height + 0.5 * tree_height))
+    hpos = biggest - tree.get_distance_height()
+    draw_straight_node(drawer, tree, margin, y, hpos, vstep, hstep, right_edge)
+
+    # draw the scale
+    btmy = margin + scale_height
+    drawer.line((margin, btmy), (margin + tree_width, btmy))
+    v = biggest
+    while v >= 0.0:
+        x = margin + int(round((1.0 - (v / biggest)) * tree_width))
+        drawer.line((x, btmy), (x, btmy - gap * 3))
+
+        txt = nicely_float_to_str(v)
+        w2 = int(round(drawer.get_text_size(txt)[1] / 2.0))
+        drawer.draw_text((x - w2, btmy - gap * 4), txt)
+
+        v -= increment
 
     drawer.save()
 
+def nicely_float_to_str(v):
+    return str(Decimal(str(v)).quantize(Decimal('0.1')))
+
+# 0 is assumed smallest
+def calibrate_scale(topval):
+    scale = 10 # factor to get to 1.0
+
+    biggest = math.ceil(topval * scale) / scale # largest number on scale
+    increments = 1.0 / scale
+    return (biggest, increments)
+
 def draw_straight_node(drawer, node, margin, y, depth, vstep, hstep, right_edge):
     x1 = margin + depth * hstep
-    x2 = margin + (depth+1) * hstep
+    x2 = margin + (depth + node.get_distance()) * hstep
     drawer.line((x1, y), (x2, y), stroke = node.linestroke,
                 color = node.linecolor)
 
     # this is the top of the vertical area the children fill
+    depth += node.get_distance()
     cy = y - int(round(vstep * len(node.get_leaves()) / 2))
     for child in node.get_children():
         ydelta = int(round(vstep * len(child.get_leaves()) / 2))
         cy += ydelta
         drawer.line((x2, y), (x2, cy), stroke = child.linestroke,
                 color = child.linecolor)
-        draw_straight_node(drawer, child, margin, cy, depth+1, vstep, hstep, right_edge)
+        draw_straight_node(drawer, child, margin, cy, depth, vstep, hstep, right_edge)
 
         cy += ydelta
 

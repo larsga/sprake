@@ -5,6 +5,7 @@ Parser for Newick format files.
 import sys
 from sprake import style
 
+# distance here means distance to parent
 class NewickNode:
 
     def __init__(self, parent, label = None, distance = None):
@@ -28,6 +29,12 @@ class NewickNode:
 
     def get_distance(self):
         return self._distance
+
+    # max sum of distances to bottom
+    def get_distance_height(self):
+        if not self._children:
+            return self._distance
+        return max([ch.get_distance_height() for ch in self._children]) + self._distance
 
     def add_child(self, child):
         self._children.append(child)
