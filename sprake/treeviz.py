@@ -38,7 +38,7 @@ def get_drawer(outfile, format, font_size):
         from sprake.draw_pdf import PDFDrawer
         drawer = PDFDrawer(outfile, font_size)
     else:
-        assert False
+        assert False, 'Unknown format "%s"' % format
     return drawer
 
 def render_tree(outfile, tree, dot_legend = None, text_legend = None,
@@ -92,12 +92,13 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
 
     # draw the tree
     empty_part = radius * EMPTY_CENTER_FACTOR
-    step = (radius - empty_part) / float(tree.get_height() + 1)
+    h = tree.get_distance_height() if tree.get_distance() != None else tree.get_height()
+    step = (radius - empty_part) / float(h)
 
     deg = tree.get_average_radians()
-    drawer.line((center, center), ctx.get_circle_point(deg, step + empty_part),
+    drawer.line((center, center), ctx.get_circle_point(deg, empty_part),
                 color = tree.linecolor, stroke = tree.linestroke)
-    draw_node(tree, 1, step + empty_part, ctx)
+    draw_node(tree, 1, empty_part, ctx, step)
 
     if dot_legend:
         draw_dot_legend(ctx, dot_legend)
@@ -106,7 +107,7 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
 
     drawer.save()
 
-def draw_node(node, level, used_radius, ctx):
+def draw_node(node, level, used_radius, ctx, step):
     if (not node.get_children()):
         if used_radius >= ctx.radius - node.dotsize:
             return
@@ -118,23 +119,21 @@ def draw_node(node, level, used_radius, ctx):
                         color = node.linecolor)
         return
 
-    remaining_radius = ctx.radius - used_radius
-    height = node.get_height()
-    step = remaining_radius / float(height)
-
     lowest = 10
     highest = 0
     for child in node.get_children():
         deg2 = child.get_average_radians()
+
+        length = step * (node.get_distance() if node.get_distance() != None else 1.0)
         inner = ctx.get_circle_point(deg2, used_radius - node.linestroke / 2.0)
-        outer = ctx.get_circle_point(deg2, min(used_radius + step, ctx.radius - node.dotsize))
+        outer = ctx.get_circle_point(deg2, min(used_radius + length, ctx.radius - node.dotsize))
         ctx.drawer.line(inner, outer, stroke = node.linestroke,
                         color = node.linecolor)
 
         lowest = min(lowest, deg2)
         highest = max(highest, deg2)
 
-        draw_node(child, level + 1, used_radius + step, ctx)
+        draw_node(child, level + 1, used_radius + length, ctx, step)
 
     r = used_radius
     start = ctx.get_circle_point(lowest, r)
@@ -207,7 +206,13 @@ def render_straight(outfile, tree, dot_legend = None, text_legend = None,
 
     drawer.create(height, width)
 
-    (biggest, increment) = calibrate_scale(tree.get_distance_height())
+    if tree.get_distance() != None:
+        draw_scale = True
+        (biggest, increment) = calibrate_scale(tree.get_distance_height())
+    else:
+        draw_scale = False
+        biggest = tree.get_height()
+        increment = None
 
     # draw the leaves
     x = margin + tree_width + gap
@@ -220,22 +225,23 @@ def render_straight(outfile, tree, dot_legend = None, text_legend = None,
     vstep = text_height + gap
     hstep = float(tree_width) / biggest # use biggest to match scale line
     y = int(round(margin + scale_height + 0.5 * tree_height))
-    hpos = biggest - tree.get_distance_height()
+    hpos = biggest - (tree.get_distance_height() if tree.get_distance() != None else (tree.get_height() + 1))
     draw_straight_node(drawer, tree, margin, y, hpos, vstep, hstep, right_edge)
 
-    # draw the scale
-    btmy = margin + scale_height
-    drawer.line((margin, btmy), (margin + tree_width, btmy))
-    v = biggest
-    while v >= 0.0:
-        x = margin + int(round((1.0 - (v / biggest)) * tree_width))
-        drawer.line((x, btmy), (x, btmy - gap * 3))
+    # draw the scale (if we have distances in the tree)
+    if draw_scale:
+        btmy = margin + scale_height
+        drawer.line((margin, btmy), (margin + tree_width, btmy))
+        v = biggest
+        while v >= 0.0:
+            x = margin + int(round((1.0 - (v / biggest)) * tree_width))
+            drawer.line((x, btmy), (x, btmy - gap * 3))
 
-        txt = nicely_float_to_str(v)
-        w2 = int(round(drawer.get_text_size(txt)[1] / 2.0))
-        drawer.draw_text((x - w2, btmy - gap * 4), txt)
+            txt = nicely_float_to_str(v)
+            w2 = int(round(drawer.get_text_size(txt)[1] / 2.0))
+            drawer.draw_text((x - w2, btmy - gap * 4), txt)
 
-        v -= increment
+            v -= increment
 
     drawer.save()
 
@@ -251,14 +257,16 @@ def calibrate_scale(topval):
     return (biggest, increments)
 
 def draw_straight_node(drawer, node, margin, y, depth, vstep, hstep, right_edge):
+    dist = node.get_distance() if node.get_distance() != None else 1.0
+
     # adjust by linestroke to make overlaps look better
     x1 = (margin + depth * hstep) - (node.linestroke / 2.0)
-    x2 = margin + (depth + node.get_distance()) * hstep
+    x2 = margin + (depth + dist) * hstep
     drawer.line((x1, y), (x2, y),
                 stroke = node.linestroke, color = node.linecolor)
 
     # this is the top of the vertical area the children fill
-    depth += node.get_distance()
+    depth += dist
     cy = y - int(round(vstep * len(node.get_leaves()) / 2))
     for child in node.get_children():
         ydelta = int(round(vstep * len(child.get_leaves()) / 2))
