@@ -23,9 +23,9 @@ class SVGDrawer:
         for ch in text:
             if ch in 'O52':
                 width += 0.9
-            elif ch in 'MCGE-0':
+            elif ch in 'MCGE-0O':
                 width += 0.8
-            elif ch in 'QBPR_SDA61483 ':
+            elif ch in 'QBPR_SDA61483 TH':
                 width += 0.75
             elif ch in '':
                 width += 0.6

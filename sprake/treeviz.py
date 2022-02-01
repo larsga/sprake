@@ -110,6 +110,7 @@ def draw_node(node, level, used_radius, ctx):
     if (not node.get_children()):
         if used_radius >= ctx.radius - node.dotsize:
             return
+
         deg2 = node.radians
         start = ctx.get_circle_point(deg2, used_radius)
         end = ctx.get_circle_point(deg2, ctx.radius - node.dotsize)
@@ -125,7 +126,7 @@ def draw_node(node, level, used_radius, ctx):
     highest = 0
     for child in node.get_children():
         deg2 = child.get_average_radians()
-        inner = ctx.get_circle_point(deg2, used_radius)
+        inner = ctx.get_circle_point(deg2, used_radius - node.linestroke / 2.0)
         outer = ctx.get_circle_point(deg2, min(used_radius + step, ctx.radius - node.dotsize))
         ctx.drawer.line(inner, outer, stroke = node.linestroke,
                         color = node.linecolor)
@@ -250,10 +251,11 @@ def calibrate_scale(topval):
     return (biggest, increments)
 
 def draw_straight_node(drawer, node, margin, y, depth, vstep, hstep, right_edge):
-    x1 = margin + depth * hstep
+    # adjust by linestroke to make overlaps look better
+    x1 = (margin + depth * hstep) - (node.linestroke / 2.0)
     x2 = margin + (depth + node.get_distance()) * hstep
-    drawer.line((x1, y), (x2, y), stroke = node.linestroke,
-                color = node.linecolor)
+    drawer.line((x1, y), (x2, y),
+                stroke = node.linestroke, color = node.linecolor)
 
     # this is the top of the vertical area the children fill
     depth += node.get_distance()
