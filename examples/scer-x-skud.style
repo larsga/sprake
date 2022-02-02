@@ -1,0 +1,6 @@
+*, linewidth=3
+Clade=Trappist, textcolor=#e3ad74, linecolor=#e3ad74
+Clade=Bread, textcolor=#1082e6
+Clade=Lambic, textcolor=#07b825, linecolor=#07b825
+Clade=Belgian ale, textcolor=#0583b5
+Clade=Wine, textcolor=#b3059e

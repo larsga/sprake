@@ -10,10 +10,14 @@ rules to change formatting of nodes based on their properties.
 
 Supported output formats: PNG, SVG, and PDF.
 
+## Example output
+
+![Simple example tree](examples/scer-x-skud.nwk)
+
 ## Simple usage
 
 ```
-python3 sprake.py tree.nwk --format PDF
+python3 sprake-cli.py tree.nwk --format PDF
 ```
 
 This will produce the output in `tree.pdf`.
@@ -21,7 +25,14 @@ This will produce the output in `tree.pdf`.
 To use style rules:
 
 ```
-python3 sprake.py tree.nwk --format PDF --data tree.csv --style tree.style
+python3 sprake-cli.py tree.nwk --format PDF --data tree.csv --style tree.style
+```
+
+To run the examples yourself, run:
+
+```
+python3 sprake-cli.py examples/scer-x-skud.nwk --data examples/scer-x-skud.csv \\
+  --style examples/scer-x-skud.style --format SVG
 ```
 
 ## Examples of style
@@ -53,3 +64,11 @@ culture=2, textcolor=#4dab4d, linecolor=#4dab4d, linewidth=2
 
 (The file format for style rules is going to change. The syntax above
 is temporary while a better format is being designed.)
+
+## Output formats
+
+| Format | Requirements | Status      |
+| ------ | ------------ | ----------- |
+| PDF    | fpdf2        | Quite good  |
+| SVG    | -            | Good        |
+| PNG    | PIL          | Not working |
