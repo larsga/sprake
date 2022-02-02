@@ -8,11 +8,12 @@ from sprake import style
 # distance here means distance to parent
 class NewickNode:
 
-    def __init__(self, parent, label = None, distance = None):
+    def __init__(self, parent, label = None, distance = None, bootstrap = None):
         self._parent = parent
         self._children = []
         self._label = label
         self._distance = distance
+        self._bootstrap = bootstrap
         self._graph_init()
 
     def get_parent(self):
@@ -30,6 +31,9 @@ class NewickNode:
     def get_distance(self):
         return self._distance
 
+    def get_bootstrap(self):
+        return self._bootstrap
+
     # max sum of distances to bottom
     def get_distance_height(self):
         if not self._children:
@@ -44,6 +48,9 @@ class NewickNode:
 
     def set_distance(self, distance):
         self._distance = distance
+
+    def set_bootstrap(self, bootstrap):
+        self._bootstrap = bootstrap
 
     def get_leaves(self):
         thelist = []
@@ -152,11 +159,21 @@ def parse_string(data):
                 pos = ix
 
             if data[pos] == ':':
-                ix = scan_while_not(data, pos, ',);')
+                ix = scan_while_not(data, pos, ',);[')
+
+                if data[ix] == '[':
+                    ix2 = scan_while_not(data, ix+1, ']')
+                    current.set_bootstrap(int(data[ix + 1 : ix2]))
+
                 current.set_distance(float(data[pos+1 : ix]))
                 # print float(data[pos+1 : ix]), current.get_label(), current
-                pos = ix
-                if data[pos] == ',':
+
+                if data[ix] == '[':
+                    pos = ix2 + 1
+                else:
+                    pos = ix
+
+                if pos < len(data) and data[pos] == ',':
                     pos += 1
 
             current = current.get_parent()

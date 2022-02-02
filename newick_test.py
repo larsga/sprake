@@ -166,6 +166,14 @@ def test_naming_internal_nodes():
 def test_naming_internal_nodes_serialize():
     serialize_check('(A,B,(C,D)E)F;')
 
+def test_bootstrap_vales():
+    tree = newick.parse_string('((Escherichia_coli_O6:0.00000,Escherichia_coli_K12:0.00022)I2:0.00022[76],(Shigella_flexneri_2a_2457T:0.00000,Shigella_flexneri_2a_301:0.00000)I3:0.00266[100])I4:0.00000[75];')
+
+    eq_(len(tree.get_children()), 2)
+    eq_(tree.get_label(), 'I4')
+    eq_(tree.get_distance(), 0)
+    eq_(tree.get_bootstrap(), 75)
+
 # ===========================================================================
 # utilities
 
