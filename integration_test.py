@@ -29,7 +29,7 @@ def test_svg_straight():
     run('SVG', False)
 
 def teardown():
-    pass #shutil.rmtree(testdir)
+    shutil.rmtree(testdir)
 
 def run(format, tree):
     tree = newick.parse_string(open(NWK).read())

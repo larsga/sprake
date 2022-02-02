@@ -188,6 +188,9 @@ def draw_text_legend(drawer, text_legend):
     # FIXME: could draw a box around it?
 
 def compute_legend_size(drawer, text_legend):
+    if not text_legend:
+        return (0, 0)
+
     text_height = drawer.get_text_size('X')[0]
     offset = text_height * 2
     gap = text_height / 3.0

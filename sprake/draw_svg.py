@@ -31,7 +31,7 @@ class SVGDrawer:
                 width += 0.8
             elif ch in 'QBPR_SDA61483 TH':
                 width += 0.75
-            elif ch in '':
+            elif ch in 'FLY':
                 width += 0.6
             elif ch in '9I':
                 width += 0.5
