@@ -25,6 +25,9 @@ class Color:
     def to_html_rgb(self):
         return '#%s%s%s' % (tohex(self._red), tohex(self._green), tohex(self._blue))
 
+    def to_rgb_tuple(self):
+        return (self._red, self._green, self._red)
+
 HEXDIGIT = '0123456789abcdef'
 def tohex(num):
     return HEXDIGIT[int(num / 16)] + HEXDIGIT[num % 16]

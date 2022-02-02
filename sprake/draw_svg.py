@@ -1,10 +1,14 @@
 
-import string
+import string, math
 from sprake import style
 
 UPPERCASE = ''.join(chr(i) for i in range(65, 91))
 LOWERCASE = ''.join(chr(i) for i in range(97, 123))
 DIGITS    = string.digits
+
+def get_circle_point(cx, cy, deg, r):
+    return (int(round(cx + math.cos(deg) * r)),
+            int(round(cy + math.sin(deg) * r)))
 
 class SVGDrawer:
 
@@ -70,10 +74,10 @@ class SVGDrawer:
           <line x1="%s" y1="%s" x2="%s" y2="%s" stroke="%s" stroke-width="%s"/>
         ''' % (x1, y1, x2, y2, color.to_html_rgb(), stroke))
 
-    def circle_segment(self, start, end, r, color = style.BLACK, stroke = 1,
-                       id = None):
-        (sx, sy) = start
-        (ex, ey) = end
+    def circle_segment(self, cx, cy, start_angle, end_angle, r,
+                       color = style.BLACK, stroke = 1, id = None):
+        (sx, sy) = get_circle_point(cx, cy, start_angle, r)
+        (ex, ey) = get_circle_point(cx, cy, end_angle, r)
 
         id = ' id="%s"' % id if id else ''
 
@@ -87,6 +91,11 @@ class SVGDrawer:
 
     # pos: normally aligned with left edge and baseline of text (before rotate)
     def draw_text(self, pos, text, degree = 0, color = style.BLACK):
+
+        # something strange about rotation in SVG requires this
+        if degree > 90 and degree < 270:
+            degree = degree - 180
+
         degree = degree * -1
         (x, y) = pos
         self._out.write('  <text x="%s" y="%s" transform="rotate(%s %s %s)" style="fill: %s; font-size: %spt">%s</text>\n' %

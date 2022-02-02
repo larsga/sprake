@@ -82,7 +82,7 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
         node.degrees = degree
         node.radians = deg
         if degree > 90 and degree < 270:
-            degree = degree - 180
+            # degree = degree - 180
             width = drawer.get_text_size(node.get_label())[1]
             (textx, texty) = ctx.get_circle_point(deg - (text_step * 0.5), radius + width + node.dotsize + 2)
 
@@ -136,10 +136,9 @@ def draw_node(node, level, used_radius, ctx, step):
         draw_node(child, level + 1, used_radius + length, ctx, step)
 
     r = used_radius
-    start = ctx.get_circle_point(lowest, r)
-    end = ctx.get_circle_point(highest, r)
-    ctx.drawer.circle_segment(start, end, r, stroke = node.linestroke,
-                              color = node.linecolor)
+    (x, y) = (ctx.center, ctx.center)
+    ctx.drawer.circle_segment(x, y, lowest, highest, r,
+                              stroke = node.linestroke, color = node.linecolor)
 
     if node.bannercolor:
         r = ctx.radius + ctx.drawer.get_text_size('This is a reasonably long text, I think [Key] (foo)')[1]
@@ -153,10 +152,11 @@ def draw_node(node, level, used_radius, ctx, step):
         ctx.drawer.draw_text_on_path(node.get_label(), theid, ctx.drawer.get_font_size() * 2)
 
 def draw_dot_legend(ctx, dot_legend):
-    offset = FONT_SIZE * 2
+    text_height = ctx.drawer.get_text_size('X')[0]
+    offset = text_height * 2
     (x, y) = (offset, offset)
-    dotsize = FONT_SIZE / 4
-    gap = FONT_SIZE / 4.0
+    dotsize = text_height / 4
+    gap = text_height / 4.0
     max_width = 0
 
     for (name, color) in dot_legend.items():
@@ -164,22 +164,23 @@ def draw_dot_legend(ctx, dot_legend):
         max_width = max(ctx.drawer.get_text_size(name), max_width)[1]
         ctx.drawer.draw_text((x + dotsize + (gap/2), y + dotsize * 0.7), name)
 
-        y = int(y + gap + FONT_SIZE)
+        y = int(y + gap + text_height)
 
     # FIXME: could draw a box around it?
 
 def draw_text_legend(ctx, text_legend):
-    offset = FONT_SIZE * 2
+    text_height = ctx.drawer.get_text_size('X')[0]
+    offset = text_height * 2
     (x, y) = (offset, offset)
-    dotsize = FONT_SIZE / 4
-    gap = FONT_SIZE / 3.0
+    dotsize = text_height / 4
+    gap = text_height / 3.0
     max_width = 0
 
     for (name, color) in text_legend.items():
         max_width = max(ctx.drawer.get_text_size(name)[1], max_width)
         ctx.drawer.draw_text((x, y + dotsize * 0.7), name, color = color)
 
-        y = int(y + gap + FONT_SIZE)
+        y = int(y + gap + text_height)
 
     # FIXME: could draw a box around it?
 
