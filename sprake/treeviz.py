@@ -43,14 +43,16 @@ def get_drawer(outfile, format, font_size):
 
 def render_tree(outfile, tree, dot_legend = None, text_legend = None,
                 format = 'SVG'):
-    leaves = tree.get_leaves()
-
     drawer = get_drawer(outfile, format, FONT_SIZE)
     (text_height, text_width) = drawer.get_text_size('A')
 
+    (legend_h, legend_w) = compute_legend_size(drawer, text_legend)
+
+    leaves = tree.get_leaves()
+
     for node in tree.get_leaves():
         text_width = max(text_width, drawer.get_text_size(node.get_label())[1])
-    text_width = max(text_width, 200) # ensure room for legend
+    text_width = max(text_width, legend_h, legend_w) # ensure room for legend
 
     gap = text_height * TEXT_SPACING_FACTOR
 
@@ -100,10 +102,11 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
                 color = tree.linecolor, stroke = tree.linestroke)
     draw_node(tree, 1, empty_part, ctx, step)
 
+    # draw legends
     if dot_legend:
-        draw_dot_legend(ctx, dot_legend)
+        draw_dot_legend(drawer, dot_legend)
     if text_legend:
-        draw_text_legend(ctx, text_legend)
+        draw_text_legend(drawer, text_legend)
 
     drawer.save()
 
@@ -151,8 +154,8 @@ def draw_node(node, level, used_radius, ctx, step):
                                   color = node.bannercolor, id = theid)
         ctx.drawer.draw_text_on_path(node.get_label(), theid, ctx.drawer.get_font_size() * 2)
 
-def draw_dot_legend(ctx, dot_legend):
-    text_height = ctx.drawer.get_text_size('X')[0]
+def draw_dot_legend(drawer, dot_legend):
+    text_height = drawer.get_text_size('X')[0]
     offset = text_height * 2
     (x, y) = (offset, offset)
     dotsize = text_height / 4
@@ -160,16 +163,16 @@ def draw_dot_legend(ctx, dot_legend):
     max_width = 0
 
     for (name, color) in dot_legend.items():
-        ctx.drawer.circle((x, y), dotsize, color)
+        drawer.circle((x, y), dotsize, color)
         max_width = max(ctx.drawer.get_text_size(name), max_width)[1]
-        ctx.drawer.draw_text((x + dotsize + (gap/2), y + dotsize * 0.7), name)
+        drawer.draw_text((x + dotsize + (gap/2), y + dotsize * 0.7), name)
 
         y = int(y + gap + text_height)
 
     # FIXME: could draw a box around it?
 
-def draw_text_legend(ctx, text_legend):
-    text_height = ctx.drawer.get_text_size('X')[0]
+def draw_text_legend(drawer, text_legend):
+    text_height = drawer.get_text_size('X')[0]
     offset = text_height * 2
     (x, y) = (offset, offset)
     dotsize = text_height / 4
@@ -177,12 +180,21 @@ def draw_text_legend(ctx, text_legend):
     max_width = 0
 
     for (name, color) in text_legend.items():
-        max_width = max(ctx.drawer.get_text_size(name)[1], max_width)
-        ctx.drawer.draw_text((x, y + dotsize * 0.7), name, color = color)
+        max_width = max(drawer.get_text_size(name)[1], max_width)
+        drawer.draw_text((x, y + dotsize * 0.7), name, color = color)
 
         y = int(y + gap + text_height)
 
     # FIXME: could draw a box around it?
+
+def compute_legend_size(drawer, text_legend):
+    text_height = drawer.get_text_size('X')[0]
+    offset = text_height * 2
+    gap = text_height / 3.0
+
+    max_width = max([drawer.get_text_size(name)[1] for name in text_legend.keys()])
+
+    return (offset + (gap + text_height) * len(text_legend), offset + max_width)
 
 # ===== STRAIGHT RENDERING MODE
 
