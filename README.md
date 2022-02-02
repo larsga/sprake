@@ -12,7 +12,7 @@ Supported output formats: PNG, SVG, and PDF.
 
 ## Example output
 
-![Simple example tree](examples/scer-x-skud.nwk)
+![Simple example tree](examples/scer-x-skud.svg)
 
 ## Simple usage
 
