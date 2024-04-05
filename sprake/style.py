@@ -44,7 +44,7 @@ class AbstractRule:
         self._prop = prop
         self._setval = setval
 
-    def update(self, node):
+    def update(self, node, data):
         if self._prop == 'textcolor':
             node.textcolor = self._setval
         elif self._prop == 'linecolor':
@@ -53,8 +53,11 @@ class AbstractRule:
             node.linestroke = int(self._setval)
         elif self._prop == 'dotcolor':
             node.dotcolour = self._setval
+        elif self._prop == 'label':
+            if data:
+                node._label = data.get(self._setval) or node._label
         else:
-            assert False
+            assert False, 'No implementation of rule property %s' % self._prop
 
 class AllRule(AbstractRule):
     def __init__(self, prop, setval):
@@ -130,10 +133,12 @@ def apply_rules(tree, rules, data_by_id):
         data = data_by_id.get(node.get_label())
         for rule in rules:
             if rule.matches(data):
-                rule.update(node)
+                rule.update(node, data)
 
     tree.upmerge_linestyle()
 
     text_legend = {rule._value : rule._setval for rule in rules
                    if rule._prop == 'textcolor' and hasattr(rule, '_value')}
-    return text_legend
+    dot_legend = {rule._value : rule._setval for rule in rules
+                   if rule._prop == 'dotcolor' and hasattr(rule, '_value')}
+    return (text_legend, dot_legend)

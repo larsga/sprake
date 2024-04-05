@@ -1,5 +1,5 @@
 
-import sys, csv, argparse
+import csv, argparse
 from sprake import newick, treeviz, style
 
 def rename(infile, format):
@@ -14,6 +14,7 @@ def rename(infile, format):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('infile', nargs = 1)
+parser.add_argument('--id-field', default = 'ID')
 parser.add_argument('--style')
 parser.add_argument('--data')
 parser.add_argument('--mode', choices = ['tree', 'straight'], default = 'tree')
@@ -27,22 +28,26 @@ if args.dump:
     newick.dump_tree(tree)
 
 text_legend = None
+dot_legend = None
 if args.style and args.data:
     rules = style.parse_style(args.style)
-    data_by_id = {row['ID'] : row for row in csv.DictReader(open(args.data))}
-    text_legend = style.apply_rules(tree, rules, data_by_id)
+    data_by_id = {row[args.id_field] : row for row in csv.DictReader(open(args.data))}
+    (text_legend, dot_legend) = style.apply_rules(tree, rules, data_by_id)
 
 if args.mode == 'tree':
     treeviz.render_tree(
         rename(args.infile[0], args.format),
         tree,
         text_legend = text_legend,
-        format = args.format
+        dot_legend = dot_legend,
+        format = args.format,
+        banners = banners
     )
 else:
     treeviz.render_straight(
         rename(args.infile[0], args.format),
         tree,
         text_legend = text_legend,
+        dot_legend = dot_legend,
         format = args.format
     )

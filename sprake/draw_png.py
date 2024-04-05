@@ -7,6 +7,10 @@ class PNGDrawer:
     def __init__(self, outfile, fontsize):
         self._font = ImageFont.truetype('Arial.ttf', fontsize)
         self._outfile = outfile
+        self._fontsize = fontsize
+
+    def get_font_size(self):
+        return self._fontsize
 
     def get_text_size(self, text):
         '(height, width)'
@@ -39,7 +43,7 @@ class PNGDrawer:
                        stroke = 1, id = None):
         pass
 
-    def line(self, start, end, color = 'black', stroke = 1):
+    def line(self, start, end, color = 'black', stroke = 1, dash = False):
         self._realdraw.line([start, end], fill = color.to_rgb_tuple(), width = stroke)
 
     def save(self):

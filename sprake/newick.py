@@ -100,8 +100,7 @@ class NewickNode:
         self.radians = None
 
         # configurable graphical styling
-        self.dotcolour = style.WHITE
-        self.dotsize = 5
+        self.dotcolour = None
         self.linestroke = 1
         self.linecolor = style.BLACK
         self.textcolor = style.BLACK
@@ -130,6 +129,31 @@ class NewickNode:
 
         if style:
             (self.linestroke, self.linecolor) = style
+
+# --- TREE NAVIGATION UTILS
+
+def get_all_nodes(tree):
+    allnodes = []
+    _add_all_nodes(tree, allnodes)
+    return allnodes
+
+def _add_all_nodes(node, allnodes):
+    allnodes.append(node)
+    for child in node.get_children():
+        _add_all_nodes(child, allnodes)
+
+def find_common_parent(n1, n2):
+    n1parents = []
+    while n1:
+        n1parents.append(n1)
+        n1 = n1.get_parent()
+
+    while n2 not in n1parents:
+        n2 = n2.get_parent()
+
+    return n2
+
+# --- PARSING
 
 def scan_while_not(data, pos, end_marker):
     while data[pos] not in end_marker:

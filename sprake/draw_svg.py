@@ -67,7 +67,7 @@ class SVGDrawer:
               stroke="%s" stroke-width="%s" fill="%s"/>
     ''' % (cx, cy, r, color, stroke, color))
 
-    def line(self, start, end, color = style.BLACK, stroke = 1):
+    def line(self, start, end, color = style.BLACK, stroke = 1, dash = False):
         (x1, y1) = start
         (x2, y2) = end
         self._out.write('''

@@ -42,7 +42,7 @@ def get_drawer(outfile, format, font_size):
     return drawer
 
 def render_tree(outfile, tree, dot_legend = None, text_legend = None,
-                format = 'SVG'):
+                format = 'SVG', banners = []):
     drawer = get_drawer(outfile, format, FONT_SIZE)
     (text_height, text_width) = drawer.get_text_size('A')
 
@@ -60,7 +60,7 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
     circumference = max(MIN_CIRCUMFERENCE, circumference)
 
     diameter = circumference / math.pi
-    width = int(circumference + (text_width * 2) + gap * 2) + 1
+    width = int(circumference + (text_width * 2) + gap * 2) + 250
     drawer.create(width, width)
 
     center = width / 2
@@ -71,6 +71,9 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
     # degrees to step further from node to center text on node
     text_step = ((math.pi * text_height) / circumference) * 0.3
 
+    auto_dotsize = (circumference / len(leaves)) * 1.4
+
+    # draw the leaves
     for ix in range(len(leaves)):
         deg = (deg_step * ix)
 
@@ -78,7 +81,7 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
         (x, y) = ctx.get_circle_point(deg, radius)
         node.x = x
         node.y = y
-        (textx, texty) = ctx.get_circle_point(deg + text_step, radius + node.dotsize + 2)
+        (textx, texty) = ctx.get_circle_point(deg + text_step, radius + auto_dotsize + 2)
 
         degree = 360 - (deg / (math.pi*2)) * 360
         node.degrees = degree
@@ -86,40 +89,56 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
         if degree > 90 and degree < 270:
             # degree = degree - 180
             width = drawer.get_text_size(node.get_label())[1]
-            (textx, texty) = ctx.get_circle_point(deg - (text_step * 0.5), radius + width + node.dotsize + 2)
+            (textx, texty) = ctx.get_circle_point(deg - (text_step * 0.5), radius + width + auto_dotsize + 2)
 
         drawer.draw_text((textx, texty), node.get_label(), degree,
                          node.textcolor)
-        drawer.circle((x, y), node.dotsize, node.dotcolour)
+        if node.dotcolour:
+            drawer.circle((x, y), auto_dotsize, node.dotcolour)
 
     # draw the tree
     empty_part = radius * EMPTY_CENTER_FACTOR
+    tree._distance = 0.00001
     h = tree.get_distance_height() if tree.get_distance() != None else tree.get_height()
     step = (radius - empty_part) / float(h)
-
     deg = tree.get_average_radians()
     drawer.line((center, center), ctx.get_circle_point(deg, empty_part),
                 color = tree.linecolor, stroke = tree.linestroke)
-    draw_node(tree, 1, empty_part, ctx, step)
+    draw_node(tree, 1, empty_part, ctx, step, auto_dotsize)
 
     # draw legends
     if dot_legend:
-        draw_dot_legend(drawer, dot_legend)
+        draw_dot_legend(ctx, drawer, dot_legend, auto_dotsize)
     if text_legend:
         draw_text_legend(drawer, text_legend)
 
+    # draw banners
+    for (n1, n2, title, color) in banners:
+        r = ctx.radius + text_width + auto_dotsize + 50
+        (lowest1, highest1) = n1.get_radian_span()
+        (lowest2, highest2) = n2.get_radian_span()
+
+        theid = 'id%s' % id(node)
+        ctx.drawer.circle_segment(center, center, lowest1, highest2, r,
+                                  stroke = ctx.drawer.get_font_size(),
+                                  color = color, id = theid)
+        ctx.drawer.draw_text_on_path(node.get_label(), theid, ctx.drawer.get_font_size() * 2)
+
     drawer.save()
 
-def draw_node(node, level, used_radius, ctx, step):
+def draw_node(node, level, used_radius, ctx, step, auto_dotsize):
     if (not node.get_children()):
-        if used_radius >= ctx.radius - node.dotsize:
+        if used_radius >= ctx.radius - auto_dotsize:
             return
 
         deg2 = node.radians
         start = ctx.get_circle_point(deg2, used_radius)
-        end = ctx.get_circle_point(deg2, ctx.radius - node.dotsize)
+        dot = 0
+        if node.dotcolour:
+            dot = auto_dotsize + 5 # FIXME: this factor needs scaling
+        end = ctx.get_circle_point(deg2, ctx.radius - dot)
         ctx.drawer.line(start, end, stroke = node.linestroke,
-                        color = node.linecolor)
+                        color = node.linecolor, dash = True)
         return
 
     lowest = 10
@@ -129,43 +148,31 @@ def draw_node(node, level, used_radius, ctx, step):
 
         length = step * (node.get_distance() if node.get_distance() != None else 1.0)
         inner = ctx.get_circle_point(deg2, used_radius - node.linestroke / 2.0)
-        outer = ctx.get_circle_point(deg2, min(used_radius + length, ctx.radius - node.dotsize))
+        outer = ctx.get_circle_point(deg2, min(used_radius + length, ctx.radius - auto_dotsize))
         ctx.drawer.line(inner, outer, stroke = node.linestroke,
                         color = node.linecolor)
 
         lowest = min(lowest, deg2)
         highest = max(highest, deg2)
 
-        draw_node(child, level + 1, used_radius + length, ctx, step)
+        draw_node(child, level + 1, used_radius + length, ctx, step, auto_dotsize)
 
     r = used_radius
     (x, y) = (ctx.center, ctx.center)
     ctx.drawer.circle_segment(x, y, lowest, highest, r,
                               stroke = node.linestroke, color = node.linecolor)
 
-    if node.bannercolor:
-        r = ctx.radius + ctx.drawer.get_text_size('This is a reasonably long text, I think [Key] (foo)')[1]
-        (lowest, highest) = node.get_radian_span()
-        start = ctx.get_circle_point(lowest, r)
-        end = ctx.get_circle_point(highest, r)
-
-        theid = 'id%s' % id(node)
-        ctx.drawer.circle_segment(start, end, r, stroke = ctx.drawer.get_font_size() * 4,
-                                  color = node.bannercolor, id = theid)
-        ctx.drawer.draw_text_on_path(node.get_label(), theid, ctx.drawer.get_font_size() * 2)
-
-def draw_dot_legend(drawer, dot_legend):
+def draw_dot_legend(ctx, drawer, dot_legend, dotsize):
     text_height = drawer.get_text_size('X')[0]
     offset = text_height * 2
     (x, y) = (offset, offset)
-    dotsize = text_height / 4
     gap = text_height / 4.0
     max_width = 0
 
     for (name, color) in dot_legend.items():
         drawer.circle((x, y), dotsize, color)
-        max_width = max(ctx.drawer.get_text_size(name), max_width)[1]
-        drawer.draw_text((x + dotsize + (gap/2), y + dotsize * 0.7), name)
+        max_width = max(ctx.drawer.get_text_size(name)[1], max_width)
+        drawer.draw_text((x + dotsize + gap, y + dotsize * 0.7), name)
 
         y = int(y + gap + text_height)
 
@@ -222,10 +229,13 @@ def render_straight(outfile, tree, dot_legend = None, text_legend = None,
 
     drawer.create(height, width)
 
-    if tree.get_distance() != None:
+    if does_tree_have_distances(tree):
+        print('AUTOSCALE')
         draw_scale = True
         (biggest, increment) = calibrate_scale(tree.get_distance_height())
+        print(biggest, increment)
     else:
+        print('STILL NO AUTOSCALE')
         draw_scale = False
         biggest = tree.get_height()
         increment = None
@@ -261,12 +271,24 @@ def render_straight(outfile, tree, dot_legend = None, text_legend = None,
 
     drawer.save()
 
+def does_tree_have_distances(tree):
+    if tree.get_distance() != None:
+        return True
+
+    # sometimes the root doesn't have a distance, but the other nodes do.
+    # we handle that here
+    if all([c.get_distance() != None for c in tree.get_children()]):
+        # so all the children of the root have distances
+        tree._distance = (sum([c.get_distance() for c in tree.get_children()]) / float(len(tree.get_children())))
+        return True
+
 def nicely_float_to_str(v):
     return str(Decimal(str(v)).quantize(Decimal('0.1')))
 
 # 0 is assumed smallest
 def calibrate_scale(topval):
-    scale = 10 # factor to get to 1.0
+    #scale = 10 # factor to get to 1.0
+    scale = 1.0 / topval
 
     biggest = math.ceil(topval * scale) / scale # largest number on scale
     increments = 1.0 / scale
