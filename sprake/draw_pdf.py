@@ -98,4 +98,4 @@ class PDFDrawer:
         return fakeunits * 20.0
 
     def save(self):
-        self._pdf.output(self._outfile, 'F')
+        self._pdf.output(self._outfile)
