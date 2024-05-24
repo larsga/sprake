@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 class PNGDrawer:
 
     def __init__(self, outfile, fontsize):
-        self._font = ImageFont.truetype(locate_font(), fontsize)
+        self._font = locate_font(fontsize)
         self._outfile = outfile
         self._fontsize = fontsize
 
@@ -50,8 +50,8 @@ class PNGDrawer:
     def save(self):
         self._image.save(self._outfile, 'PNG')
 
-def locate_font():
-    if platform.system() == 'Linux':
-        return '/usr/share/fonts/truetype/freefont/FreeMono.ttf'
-    else:
-        return 'Arial.ttf'
+def locate_font(fontsize):
+    try:
+        return ImageFont.truetype('Arial.ttf', fontsize)
+    except OSError:
+        ImageFont.truetype('resources/cruft.ttf', fontsize)
