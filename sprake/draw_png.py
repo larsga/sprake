@@ -54,4 +54,4 @@ def locate_font(fontsize):
     try:
         return ImageFont.truetype('Arial.ttf', fontsize)
     except OSError:
-        ImageFont.truetype('resources/cruft.ttf', fontsize)
+        return ImageFont.truetype('resources/cruft.ttf', fontsize)
