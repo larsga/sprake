@@ -15,7 +15,8 @@ class PNGDrawer:
 
     def get_text_size(self, text):
         '(height, width)'
-        return self._font.getsize(text)
+        (left, top, right, bottom) = self._font.getbbox(text)
+        return (bottom - top, right - left)
 
     def create(self, height, width):
         self._image = Image.new('RGB', (int(height), int(width)), (255, 255, 255))
