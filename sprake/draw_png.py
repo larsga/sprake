@@ -51,7 +51,7 @@ class PNGDrawer:
         self._image.save(self._outfile, 'PNG')
 
 def locate_font():
-    if platform.system() == 'Darwin':
-        return 'Arial.ttf'
+    if platform.system() == 'Linux':
+        return '/usr/share/fonts/truetype/freefont/FreeMono.ttf'
     else:
-        return 'FreeMono.ttf'
+        return 'Arial.ttf'
