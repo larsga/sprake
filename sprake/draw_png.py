@@ -1,11 +1,12 @@
 
+import platform
 from sprake import style
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 class PNGDrawer:
 
     def __init__(self, outfile, fontsize):
-        self._font = ImageFont.truetype('Arial.ttf', fontsize)
+        self._font = ImageFont.truetype(locate_font(), fontsize)
         self._outfile = outfile
         self._fontsize = fontsize
 
@@ -48,3 +49,9 @@ class PNGDrawer:
 
     def save(self):
         self._image.save(self._outfile, 'PNG')
+
+def locate_font():
+    if platform.system() == 'Darwin':
+        return 'Arial.ttf'
+    else:
+        return 'FreeMono.ttf'
