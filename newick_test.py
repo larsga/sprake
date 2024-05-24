@@ -1,7 +1,7 @@
+# encoding=utf-8
 
-import io
+import io, unittest
 from sprake import newick
-from nose.tools import eq_
 
 def test_basic():
     tree = newick.parse_string('(A,B,(C,D));')
@@ -128,7 +128,7 @@ def test_real_example_serialize():
 
 def test_other_real():
     tree = newick.parse_string('((BE017,(ABI1525,ABI1606)),(BR005,XXX));')
-    eq_(len(tree.get_children()), 2)
+    assert len(tree.get_children()) == 2
     assert tree.get_label() == None
     assert tree.get_distance() == None
 
@@ -169,10 +169,25 @@ def test_naming_internal_nodes_serialize():
 def test_bootstrap_vales():
     tree = newick.parse_string('((Escherichia_coli_O6:0.00000,Escherichia_coli_K12:0.00022)I2:0.00022[76],(Shigella_flexneri_2a_2457T:0.00000,Shigella_flexneri_2a_301:0.00000)I3:0.00266[100])I4:0.00000[75];')
 
-    eq_(len(tree.get_children()), 2)
-    eq_(tree.get_label(), 'I4')
-    eq_(tree.get_distance(), 0)
-    eq_(tree.get_bootstrap(), 75)
+    assert len(tree.get_children()) == 2
+    assert tree.get_label() == 'I4'
+    assert tree.get_distance() == 0
+    assert tree.get_bootstrap() == 75
+
+def test_non_ascii():
+    tree = newick.parse_string('(A,Bøø,(C,D));')
+    assert len(tree.get_children()) == 3
+    assert tree.get_label() == None
+
+    (a, b, parent) = tree.get_children()
+    assert a.get_label() == 'A'
+    assert b.get_label() == 'Bøø'
+    assert parent.get_label() == None
+    assert len(parent.get_children()) == 2
+
+    (c, d) = parent.get_children()
+    assert c.get_label() == 'C'
+    assert d.get_label() == 'D'
 
 # ===========================================================================
 # utilities
@@ -182,4 +197,4 @@ def serialize_check(input):
 
     outf = io.StringIO()
     output = newick.to_newick(outf, tree)
-    eq_(input, outf.getvalue())
+    assert input == outf.getvalue()

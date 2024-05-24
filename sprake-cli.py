@@ -34,6 +34,7 @@ if args.style and args.data:
     data_by_id = {row[args.id_field] : row for row in csv.DictReader(open(args.data))}
     (text_legend, dot_legend) = style.apply_rules(tree, rules, data_by_id)
 
+banners = []
 if args.mode == 'tree':
     treeviz.render_tree(
         rename(args.infile[0], args.format),

@@ -17,7 +17,7 @@ class PNGDrawer:
         return self._font.getsize(text)
 
     def create(self, height, width):
-        self._image = Image.new('RGB', (height, width), (255, 255, 255))
+        self._image = Image.new('RGB', (int(height), int(width)), (255, 255, 255))
         self._realdraw = ImageDraw.Draw(self._image)
 
     def draw_text(self, pos, text, degree = 0, color = style.BLACK):

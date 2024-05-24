@@ -98,8 +98,7 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
 
     # draw the tree
     empty_part = radius * EMPTY_CENTER_FACTOR
-    tree._distance = 0.00001
-    h = tree.get_distance_height() if tree.get_distance() != None else tree.get_height()
+    h = get_tree_height(tree)
     step = (radius - empty_part) / float(h)
     deg = tree.get_average_radians()
     drawer.line((center, center), ctx.get_circle_point(deg, empty_part),
@@ -125,6 +124,12 @@ def render_tree(outfile, tree, dot_legend = None, text_legend = None,
         ctx.drawer.draw_text_on_path(node.get_label(), theid, ctx.drawer.get_font_size() * 2)
 
     drawer.save()
+
+def get_tree_height(tree):
+    if any([n.get_distance() == None for n in tree.get_all_nodes()]):
+        return tree.get_height()
+    else:
+        return tree.get_distance_height()
 
 def draw_node(node, level, used_radius, ctx, step, auto_dotsize):
     if (not node.get_children()):
